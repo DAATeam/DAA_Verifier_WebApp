@@ -1,0 +1,14 @@
+body {
+    background-color: #ebebeb;
+}
+.hello {
+    text-align: center;
+    color: white;
+    font-family: Verdana;
+    font-size: 50px;
+}
+.time {
+    text-align: center;
+    color: green;
+    font-size: 20px;
+}
