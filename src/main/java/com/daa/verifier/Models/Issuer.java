@@ -396,7 +396,6 @@ public class Issuer {
 		
 		public JoinMessage2(BNCurve curve, String json) {
 			Base64.Decoder decoder = Base64.getUrlDecoder();
-
 			JsonObject object = new JsonParser().parse(json).getAsJsonObject().getAsJsonObject(JSON_NAME);
 			this.a = curve.point1FromBytes(decoder.decode(object.get(JSON_A).getAsString()));
 			this.b = curve.point1FromBytes(decoder.decode(object.get(JSON_B).getAsString()));

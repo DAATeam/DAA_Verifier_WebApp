@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.daa.verifier.Models.Service;
+import com.daa.verifier.Models.SigData;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -49,7 +50,8 @@ public class HttpConnection {
         post.setHeader("User-Agent", Config.USER_AGENT);
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-
+        System.out.println("jm1: "+jm1.getJm1());
+        System.out.println("field: "+jm1.getField());
         urlParameters.add(new BasicNameValuePair(constantVariables.JOIN_MESSAGE_1, jm1.getJm1()));
         urlParameters.add(new BasicNameValuePair(constantVariables.FIELD, jm1.getField()));
 
@@ -58,6 +60,29 @@ public class HttpConnection {
         HttpResponse response = this.client.execute(post);
         String result = readResponse(response);
 
+        return new JSONObject(result);
+    }
+    public JSONObject getCertificate(String url, SigData sigData) throws Exception {
+        String urlJoin = url+"/cert";
+        HttpPost post = new HttpPost(urlJoin);
+
+        post.setHeader("User-Agent", Config.USER_AGENT);
+
+        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        System.out.println("m: "+sigData.getM());
+        System.out.println("sig: "+sigData.getSig());
+        System.out.println("nonce: "+sigData.getNonce());
+        System.out.println("basename: "+sigData.getBasename());
+        urlParameters.add(new BasicNameValuePair("m", sigData.getM()));
+        urlParameters.add(new BasicNameValuePair("sig", sigData.getSig()));
+        urlParameters.add(new BasicNameValuePair("nonce", sigData.getNonce()));
+        urlParameters.add(new BasicNameValuePair("basename", sigData.getBasename()));
+
+        post.setEntity(new UrlEncodedFormEntity(urlParameters));
+
+        HttpResponse response = this.client.execute(post);
+        String result = readResponse(response);
+        System.out.println("READ RESULT: "+result);
         return new JSONObject(result);
     }
     public String readResponse(HttpResponse response) {
@@ -69,7 +94,6 @@ public class HttpConnection {
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
-            System.out.println("response: "+result.toString());
             return result.toString();
         } catch (IOException e) {
             e.printStackTrace();

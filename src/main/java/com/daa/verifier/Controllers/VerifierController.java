@@ -3,6 +3,7 @@ package com.daa.verifier.Controllers;
 import com.daa.verifier.Models.*;
 import com.google.gson.JsonObject;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +26,9 @@ import com.daa.verifier.Controllers.HttpConnection;
 import com.daa.verifier.Controllers.crypto.BNCurve;
 import com.daa.verifier.Models.Issuer;
 import org.json.JSONObject;
+
+import static com.daa.verifier.Controllers.utils.bytesToHex;
+
 /**
  * Created by DK on 11/24/16.
  */
@@ -50,6 +54,15 @@ public class VerifierController {
 
     protected joinData joinData = null;
     protected BigInteger serviceSk = null;
+    protected Issuer.JoinMessage2 joinMessage2Data = null;
+
+    public Issuer.JoinMessage2 getJoinMessage2Data() {
+        return joinMessage2Data;
+    }
+
+    public void setJoinMessage2Data(Issuer.JoinMessage2 joinMessage2Data) {
+        this.joinMessage2Data = joinMessage2Data;
+    }
 
     public BigInteger getServiceSk() {
         return serviceSk;
@@ -72,12 +85,26 @@ public class VerifierController {
         if (app_Id != null && m != null) {
             Service service = new Service(app_Id, m);
             if (checkLogin(service)) {
+                this.setService(service);
                 response.setStatus(200);
                 response.getWriter().println("join Success");
                 response.getWriter().println("nonce number: "+this.getJoinData().getNonce());
             }
         }
 
+    }
+    @RequestMapping( method = RequestMethod.POST, value="/webLogin")
+    public String Login(@RequestParam("app_id") Integer app_Id,
+                        @RequestParam("m") String m,
+                        ModelMap model
+    ) throws IOException {
+        if (app_Id != null && m != null) {
+            Service service = new Service(app_Id, m);
+            if (checkLogin(service)) {
+                System.out.println("TEST");
+            }
+        }
+        return "loginResult";
     }
     @RequestMapping( method = RequestMethod.GET, value="/getVerifyUrl")
     public void getVerifyUrl(HttpServletResponse response) throws IOException {
@@ -99,8 +126,23 @@ public class VerifierController {
                 Issuer.JoinMessage1 jm1 = authenticator.EcDaaJoin1(nonce);
                 String jm1String = jm1.toJson(curve);
                 System.out.println("create jm1 Success:"+jm1String);
-                response.setStatus(200);
-                response.getWriter().println("SUCCESS: "+ jm1String);
+                joinM1Data jm1Data = new joinM1Data(jm1String, Config.REQUIRE_INFO);
+                joinM1(jm1Data, curve);
+                if (this.getJoinMessage2Data() != null) {
+                    authenticator.EcDaaJoin2(this.getJoinMessage2Data());
+                    SigData sigData = createSignature(authenticator, curve);
+                    if (sigData != null) {
+                        this.getCertificate(sigData);
+                        response.setStatus(200);
+                        response.getWriter().println("SUCCESS: "+ jm1String);
+                    } else {
+                        response.setStatus(400);
+                        response.getWriter().println("FAIL to create signature");
+                    }
+                } else {
+                    response.setStatus(400);
+                    response.getWriter().println("FAIL to join message 2");
+                }
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
@@ -145,14 +187,39 @@ public class VerifierController {
         responseData.setNonce(response.getBigInteger(constantVariables.NONCE));
         return responseData;
     }
-    public void joinM1(joinM1Data jm1) {
+    public void joinM1(joinM1Data jm1, BNCurve curve) {
         JSONObject response = new JSONObject();
         HttpConnection http = new HttpConnection();
         try {
             response = http.sendJoinMessage1(Config.IssuerUrl, jm1);
+            System.out.println("joinM1 response: "+response.get(constantVariables.STATUS));
+            Issuer.JoinMessage2 jm2 = new Issuer.JoinMessage2(curve, response.getString("jm2"));
+            this.setJoinMessage2Data(jm2);
+            System.out.println("joinM2 data: "+jm2.toJson(curve));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("joinM1 response: "+response.get(constantVariables.STATUS));
+    }
+    public SigData createSignature(Authenticator authenticator, BNCurve curve) {
+        SigData sigData = null;
+        try {
+            // hack message here ??? >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            Authenticator.EcDaaSignature EcDaaSig = authenticator.EcDaaSign(Config.CERT_BASENAME, "{\"user_name\":\"dk\",\"user_job\":\"student\"}");
+            String stringSig = bytesToHex(EcDaaSig.encode(curve));
+            sigData = new SigData(stringSig, this.getJoinData().getNonce(), Config.CERT_BASENAME, "{\"user_name\":\"dk\",\"user_job\":\"student\"}");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return sigData;
+    }
+    public void getCertificate(SigData sigData) {
+        JSONObject response = new JSONObject();
+        HttpConnection http = new HttpConnection();
+        try {
+            response = http.getCertificate(Config.IssuerUrl, sigData);
+            System.out.println("getCert response: "+response.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

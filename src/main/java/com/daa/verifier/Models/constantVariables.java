@@ -18,4 +18,9 @@ public class constantVariables {
     // key for request jm1
     public static final String JOIN_MESSAGE_1 = "jm1";
     public static final String FIELD = "field";
+
+    // key for request Cert
+    public static final String SIGNATURE = "sig";
+    public static final String BASENAME = "basename";
+    public static final String m = "m";
 }
