@@ -8,9 +8,6 @@ import java.math.BigInteger;
  */
 public class SigData {
     @NotNull
-    public String m;
-
-    @NotNull
     public String sig;
 
     @NotNull
@@ -21,24 +18,15 @@ public class SigData {
 
     public SigData() {
     }
-    public SigData(String sig, BigInteger nonce, String basename, String m) {
-        this.setM(m);
+    public SigData(String sig, BigInteger nonce, String basename) {
         this.setBasename(basename);
         this.setNonce(nonce.toString());
         this.setSig(sig);
-    }
-    public String getM() {
-        return m;
-    }
-
-    public void setM(String m) {
-        this.m = m;
     }
 
     public String getSig() {
         return sig;
     }
-
     public void setSig(String sig) {
         this.sig = sig;
     }

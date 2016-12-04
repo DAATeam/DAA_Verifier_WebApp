@@ -203,10 +203,9 @@ public class VerifierController {
     public SigData createSignature(Authenticator authenticator, BNCurve curve) {
         SigData sigData = null;
         try {
-            // hack message here ??? >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            Authenticator.EcDaaSignature EcDaaSig = authenticator.EcDaaSign(Config.CERT_BASENAME, "{\"user_name\":\"dk\",\"user_job\":\"student\"}");
+            Authenticator.EcDaaSignature EcDaaSig = authenticator.EcDaaSign(Config.CERT_BASENAME, Config.PERMISSION);
             String stringSig = bytesToHex(EcDaaSig.encode(curve));
-            sigData = new SigData(stringSig, this.getJoinData().getNonce(), Config.CERT_BASENAME, "{\"user_name\":\"dk\",\"user_job\":\"student\"}");
+            sigData = new SigData(stringSig, this.getJoinData().getNonce(), Config.CERT_BASENAME);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }

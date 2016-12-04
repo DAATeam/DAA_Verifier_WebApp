@@ -59,6 +59,7 @@ public class HttpConnection {
 
         HttpResponse response = this.client.execute(post);
         String result = readResponse(response);
+        System.out.println("response sendJoinM1: "+result);
 
         return new JSONObject(result);
     }
@@ -69,11 +70,9 @@ public class HttpConnection {
         post.setHeader("User-Agent", Config.USER_AGENT);
 
         List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-        System.out.println("m: "+sigData.getM());
         System.out.println("sig: "+sigData.getSig());
         System.out.println("nonce: "+sigData.getNonce());
         System.out.println("basename: "+sigData.getBasename());
-        urlParameters.add(new BasicNameValuePair("m", sigData.getM()));
         urlParameters.add(new BasicNameValuePair("sig", sigData.getSig()));
         urlParameters.add(new BasicNameValuePair("nonce", sigData.getNonce()));
         urlParameters.add(new BasicNameValuePair("basename", sigData.getBasename()));
