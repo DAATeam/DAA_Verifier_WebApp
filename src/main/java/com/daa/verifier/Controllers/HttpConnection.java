@@ -93,6 +93,7 @@ public class HttpConnection {
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
+            System.out.println("result call api: "+result.toString());
             return result.toString();
         } catch (IOException e) {
             e.printStackTrace();

@@ -28,6 +28,7 @@ import com.daa.verifier.Models.Issuer;
 import org.json.JSONObject;
 
 import static com.daa.verifier.Controllers.utils.bytesToHex;
+import static com.daa.verifier.Controllers.utils.hexStringToByteArray;
 
 /**
  * Created by DK on 11/24/16.
@@ -55,6 +56,33 @@ public class VerifierController {
     protected joinData joinData = null;
     protected BigInteger serviceSk = null;
     protected Issuer.JoinMessage2 joinMessage2Data = null;
+    protected CertData certData = null;
+    protected BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
+    protected Issuer.IssuerPublicKey issuerPublicKey = null;
+
+    public Issuer.IssuerPublicKey getIssuerPublicKey() {
+        return issuerPublicKey;
+    }
+
+    public void setIssuerPublicKey(Issuer.IssuerPublicKey issuerPublicKey) {
+        this.issuerPublicKey = issuerPublicKey;
+    }
+
+    public BNCurve getCurve() {
+        return curve;
+    }
+
+    public void setCurve(BNCurve curve) {
+        this.curve = curve;
+    }
+
+    public CertData getCertData() {
+        return certData;
+    }
+
+    public void setCertData(CertData certData) {
+        this.certData = certData;
+    }
 
     public Issuer.JoinMessage2 getJoinMessage2Data() {
         return joinMessage2Data;
@@ -106,21 +134,21 @@ public class VerifierController {
         }
         return "loginResult";
     }
-    @RequestMapping( method = RequestMethod.GET, value="/getVerifyUrl")
+
+    @RequestMapping( method = RequestMethod.GET, value="/verify")
     public void getVerifyUrl(HttpServletResponse response) throws IOException {
         if (this.getJoinData() != null) {
-            String curveName = Config.CURVE_NAME;
             String ipkString = this.getJoinData().getIpk();
             BigInteger nonce = this.getJoinData().getNonce();
             // create Elliptic Curve from Issuer curveName and
-            BNCurve curve = BNCurve.createBNCurveFromName(curveName);
+            BNCurve curve = this.getCurve();
             // create service sk and pk
             SecureRandom random = new SecureRandom();
             BigInteger sk = curve.getRandomModOrder(random);
             this.setServiceSk(sk);
             // get Issuer public key from response;
-            System.out.println("11111 before ipk:");
             Issuer.IssuerPublicKey ipk = new Issuer.IssuerPublicKey(curve, ipkString);
+            this.setIssuerPublicKey(ipk);
             try {
                 Authenticator authenticator = new Authenticator(curve, ipk, sk);
                 Issuer.JoinMessage1 jm1 = authenticator.EcDaaJoin1(nonce);
@@ -133,8 +161,13 @@ public class VerifierController {
                     SigData sigData = createSignature(authenticator, curve);
                     if (sigData != null) {
                         this.getCertificate(sigData);
-                        response.setStatus(200);
-                        response.getWriter().println("SUCCESS: "+ jm1String);
+                        if (this.getCertData() != null) {
+                            response.setStatus(200);
+                            response.getWriter().println(this.getCertData().getCertificate());
+                        } else {
+                            response.setStatus(400);
+                            response.getWriter().println("Service Provider Certificate Fail");
+                        }
                     } else {
                         response.setStatus(400);
                         response.getWriter().println("FAIL to create signature");
@@ -151,15 +184,36 @@ public class VerifierController {
             response.getWriter().println("ERROR: Join Proccess not yet!");
         }
     }
-    @RequestMapping(value = "/verify", method = RequestMethod.GET)
-    public String getInfoVerifier(Map<String, Object> model){
-        model.put("time", "11h59");
-        return "homepage";
-    }
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
-    public String postInfoVerify(Map<String, Object> model){
-        model.put("time", "11h59");
-        return "homepage";
+    public void postInfoVerify(HttpServletResponse response,
+                               @RequestParam("user_certificate") String certificate,
+                               @RequestParam("basename") String basename
+    ) throws IOException {
+        if (certificate == null || basename == null) {
+            response.setStatus(400);
+            response.getWriter().println("ERROR: invalid input");
+        } else {
+            Verifier verifier = new Verifier(this.getCurve());
+            byte[] cert = hexStringToByteArray(certificate);
+            Authenticator.EcDaaSignature ecDaaSignature = new Authenticator.EcDaaSignature(cert, null, this.getCurve());
+            try {
+                Boolean verifyResult = verifier.verify(ecDaaSignature, basename, this.getIssuerPublicKey(),null);
+                if (verifyResult) {
+                    response.setStatus(200);
+                    response.getWriter().println("Verify user success!");
+                    response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
+                } else {
+                    response.setStatus(400);
+                    response.getWriter().println("Verify user fail!");
+                    response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
+                }
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                response.setStatus(400);
+                response.getWriter().println("verify error !!");
+                response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
+            }
+        }
     }
     // join into issuer get Nonce
     public Boolean checkLogin(Service service) throws IOException {
@@ -187,6 +241,7 @@ public class VerifierController {
         responseData.setNonce(response.getBigInteger(constantVariables.NONCE));
         return responseData;
     }
+
     public void joinM1(joinM1Data jm1, BNCurve curve) {
         JSONObject response = new JSONObject();
         HttpConnection http = new HttpConnection();
@@ -200,6 +255,7 @@ public class VerifierController {
             e.printStackTrace();
         }
     }
+
     public SigData createSignature(Authenticator authenticator, BNCurve curve) {
         SigData sigData = null;
         try {
@@ -211,12 +267,19 @@ public class VerifierController {
         }
         return sigData;
     }
+
     public void getCertificate(SigData sigData) {
         JSONObject response = new JSONObject();
         HttpConnection http = new HttpConnection();
         try {
             response = http.getCertificate(Config.IssuerUrl, sigData);
-            System.out.println("getCert response: "+response.toString());
+            CertData certData = new CertData(
+                    response.get(constantVariables.MESSAGE_RESPONSE).toString(),
+                    response.get(constantVariables.CERT).toString(),
+                    response.get(constantVariables.STATUS).toString()
+            );
+            this.setCertData(certData);
+            System.out.println("Cert stored: "+this.getCertData().getCertificate());
         } catch (Exception e) {
             e.printStackTrace();
         }

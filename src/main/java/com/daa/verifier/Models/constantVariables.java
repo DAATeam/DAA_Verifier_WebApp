@@ -10,6 +10,7 @@ public class constantVariables {
     public static final String CURVE_NAME = "curveName";
     public static final String NONCE = "nonce";
     public static final String STATUS = "status";
+    public static final String CERT = "certificate";
 
     // key for request join
     public static final String APP_ID = "appId";
