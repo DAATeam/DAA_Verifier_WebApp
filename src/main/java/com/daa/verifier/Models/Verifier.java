@@ -56,10 +56,8 @@ public class Verifier {
 		success &= this.curve.isInG1(signature.s);
 		success &= this.curve.isInG1(signature.t);
 		success &= this.curve.isInG1(signature.w);
-
 		// Check that this is not the trivial credential (1, 1, 1, 1)
 		success &= !this.curve.isIdentityG1(signature.r);
-		
 		// Verify that c2, s2 proves SPK{(sk): w = s^sk}(krd, appId)
 		success &= signature.c2.equals(this.curve.hashModOrder(
 				this.curve.point1ToBytes(
@@ -68,19 +66,16 @@ public class Verifier {
 				this.curve.point1ToBytes(signature.w),
 				appId.getBytes(),
 				this.curve.hash(signature.krd)));
-		
 		// Verify credential
 		success &= this.curve.pair(signature.r, pk.Y).equals(this.curve.pair(signature.s, this.curve.getG2()));
 		success &= this.curve.pair(signature.t, this.curve.getG2()).equals(
 				this.curve.pair(signature.r.clone().addPoint(signature.w), pk.X));
-
 		// Perform revocation check
 		if(revocationList != null) {
 			for(BigInteger sk : revocationList) {
 				success &= !signature.s.clone().multiplyPoint(sk).equals(signature.w);
 			}
 		}
-		
 		return success;
 	}
 	

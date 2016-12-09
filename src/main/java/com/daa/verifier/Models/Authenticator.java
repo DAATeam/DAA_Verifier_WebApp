@@ -188,7 +188,6 @@ public class Authenticator {
 			this.s2 = s2;
 			this.krd = krd;
 		}
-		
 		public EcDaaSignature(byte[] encoded, byte[] krd, BNCurve curve) {
 			if(encoded.length != 10*curve.byteLength()+4) {
 				throw new IllegalArgumentException("Invalid encoding: encoding does not have the expected length");

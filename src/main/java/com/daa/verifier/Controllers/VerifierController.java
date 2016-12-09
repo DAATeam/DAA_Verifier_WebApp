@@ -59,6 +59,15 @@ public class VerifierController {
     protected CertData certData = null;
     protected BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
     protected Issuer.IssuerPublicKey issuerPublicKey = null;
+    protected SigData sigData = null;
+
+    public SigData getSigData() {
+        return sigData;
+    }
+
+    public void setSigData(SigData sigData) {
+        this.sigData = sigData;
+    }
 
     public Issuer.IssuerPublicKey getIssuerPublicKey() {
         return issuerPublicKey;
@@ -160,6 +169,7 @@ public class VerifierController {
                     authenticator.EcDaaJoin2(this.getJoinMessage2Data());
                     SigData sigData = createSignature(authenticator, curve);
                     if (sigData != null) {
+                        this.setSigData(sigData);
                         this.getCertificate(sigData);
                         if (this.getCertData() != null) {
                             response.setStatus(200);
@@ -186,33 +196,77 @@ public class VerifierController {
     }
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
-                               @RequestParam("user_certificate") String certificate,
+                               @RequestParam("user_cert") String certificate,
+                               @RequestParam("user_sig") String signature,
+                               @RequestParam("user_mess") String message,
                                @RequestParam("basename") String basename
     ) throws IOException {
-        if (certificate == null || basename == null) {
+        if (certificate == null || basename == null || signature == null || message == null) {
             response.setStatus(400);
-            response.getWriter().println("ERROR: invalid input");
+            response.getWriter().println("ERROR: invalid input. not enough params");
         } else {
             Verifier verifier = new Verifier(this.getCurve());
-            byte[] cert = hexStringToByteArray(certificate);
-            Authenticator.EcDaaSignature ecDaaSignature = new Authenticator.EcDaaSignature(cert, null, this.getCurve());
+            byte[] cert = null;
+            byte[] sigMessage = null;
+            byte[] sig = null;
+            byte[] messageByte = null;
             try {
-                Boolean verifyResult = verifier.verify(ecDaaSignature, basename, this.getIssuerPublicKey(),null);
-                if (verifyResult) {
-                    response.setStatus(200);
-                    response.getWriter().println("Verify user success!");
-                    response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
-                } else {
-                    response.setStatus(400);
-                    response.getWriter().println("Verify user fail!");
-                    response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
-                }
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
+                cert = hexStringToByteArray(certificate);
+                sigMessage = signature.getBytes();
+                sig = hexStringToByteArray(signature);
+                messageByte = message.getBytes();
+            } catch (Exception e) {
+                System.out.println(e);
                 response.setStatus(400);
-                response.getWriter().println("verify error !!");
-                response.getWriter().println("c2 sig: "+ ecDaaSignature.c2.toString());
+                response.getWriter().println("FAIL! Your Certificate Invalid: "+certificate);
+            };
+            if (cert != null && sigMessage != null && sig != null && messageByte != null) {
+                Authenticator.EcDaaSignature ecDaaSignatureCert = new Authenticator.EcDaaSignature(cert, sigMessage, this.getCurve());
+                Authenticator.EcDaaSignature ecDaaSignatureSig = new Authenticator.EcDaaSignature(sig, messageByte, this.getCurve());
+                try {
+                    Boolean verifyCertResult = verifier.verify(ecDaaSignatureCert, basename, this.getIssuerPublicKey(),null);
+                    Boolean verifySigResult = verifier.verify(ecDaaSignatureSig, basename, this.getIssuerPublicKey(),null);
+                    if (verifyCertResult && verifySigResult) {
+                        response.setStatus(200);
+                        response.getWriter().println("SUCCESS! Your sent message is valid: "+Config.PERMISSION);
+                    } else {
+                        response.setStatus(400);
+                        response.getWriter().println("FAIL! Your sent message is invalid: "+Config.PERMISSION);
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    response.setStatus(400);
+                    response.getWriter().println("Verify Session Error");
+                }
             }
+        }
+    }
+
+    // For Test service provider certificate
+    @RequestMapping( method = RequestMethod.GET, value="/checkVerifierCert")
+    public void checkCert(HttpServletResponse response) throws IOException {
+        CertData certData = this.getCertData();
+        Verifier verifier = new Verifier(this.getCurve());
+        byte[] cert = hexStringToByteArray(certData.getCertificate());
+        byte[] sigMessage = this.getSigData().getSig().getBytes();
+        byte[] sig = hexStringToByteArray(this.getSigData().getSig());
+        byte[] message = Config.PERMISSION.getBytes();
+        Authenticator.EcDaaSignature ecDaaSignatureCert = new Authenticator.EcDaaSignature(cert, sigMessage, this.getCurve());
+        Authenticator.EcDaaSignature ecDaaSignatureSig = new Authenticator.EcDaaSignature(sig, message, this.getCurve());
+        try {
+            Boolean verifyCertResult = verifier.verify(ecDaaSignatureCert, Config.CERT_BASENAME, this.getIssuerPublicKey(),null);
+            Boolean verifySigResult = verifier.verify(ecDaaSignatureSig, Config.CERT_BASENAME, this.getIssuerPublicKey(),null);
+            if (verifyCertResult && verifySigResult) {
+                response.setStatus(200);
+                response.getWriter().println("SUCCESS! Your message is valid: "+Config.PERMISSION);
+            } else {
+                response.setStatus(400);
+                response.getWriter().println("FAIL! Your message is invalid: "+Config.PERMISSION);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            response.setStatus(200);
+            response.getWriter().println("Verify Error");
         }
     }
     // join into issuer get Nonce
@@ -260,6 +314,7 @@ public class VerifierController {
         SigData sigData = null;
         try {
             Authenticator.EcDaaSignature EcDaaSig = authenticator.EcDaaSign(Config.CERT_BASENAME, Config.PERMISSION);
+            System.out.println("sigData KRD: "+ bytesToHex(EcDaaSig.krd));
             String stringSig = bytesToHex(EcDaaSig.encode(curve));
             sigData = new SigData(stringSig, this.getJoinData().getNonce(), Config.CERT_BASENAME);
         } catch (NoSuchAlgorithmException e) {
