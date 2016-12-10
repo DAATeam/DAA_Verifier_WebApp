@@ -16,4 +16,5 @@
 <body>
 
 </body>
+<script type="text/javascript" src="<c:url value="/resources/theme/js/communication.js" />"></script>
 </html>
