@@ -2,7 +2,9 @@ package com.daa.verifier.Controllers;
 
 import com.daa.verifier.Models.*;
 import com.google.gson.JsonObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -130,18 +132,17 @@ public class VerifierController {
         }
 
     }
-    @RequestMapping( method = RequestMethod.POST, value="/webLogin")
-    public String Login(@RequestParam("app_id") Integer app_Id,
-                        @RequestParam("m") String m,
-                        ModelMap model
+    @RequestMapping( method = RequestMethod.GET, value="/weblogin")
+    public String Login(ModelMap model
     ) throws IOException {
-        if (app_Id != null && m != null) {
-            Service service = new Service(app_Id, m);
-            if (checkLogin(service)) {
-                System.out.println("TEST");
-            }
+        model.put("serviceName", "DAA Authen");
+        model.put("test", "DAA");
+        String cert = "no Service Login!";
+        if (this.getCertData() != null && this.getCertData().getCertificate() != null) {
+            cert = this.getCertData().getCertificate();
         }
-        return "loginResult";
+        model.put("serviceCertificate", cert);
+        return "login";
     }
 
     @RequestMapping( method = RequestMethod.GET, value="/verify")
@@ -309,7 +310,6 @@ public class VerifierController {
             e.printStackTrace();
         }
     }
-
     public SigData createSignature(Authenticator authenticator, BNCurve curve) {
         SigData sigData = null;
         try {
@@ -337,6 +337,18 @@ public class VerifierController {
             System.out.println("Cert stored: "+this.getCertData().getCertificate());
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    @RequestMapping( method = RequestMethod.GET, value="/testData")
+    public void  testRepository(HttpServletResponse response) throws IOException {
+        try {
+            System.out.println("Success");
+            response.setStatus(200);
+            response.getWriter().println("OK");
+        } catch (Exception e) {
+            System.out.println(e);
+            response.setStatus(400);
+            response.getWriter().println("FAIL");
         }
     }
 }
