@@ -1,5 +1,7 @@
 package com.daa.verifier.Controllers;
-
+import java.security.MessageDigest;
+import java.sql.Timestamp;
+import java.util.Random;
 /**
  * Created by DK on 12/3/16.
  */
@@ -22,5 +24,29 @@ public class utils {
                     + Character.digit(s.charAt(i+1), 16));
         }
         return data;
+    }
+
+    public static String generateSessionId() {
+        Long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
+        Long rand = new Random().nextLong();
+        String value = String.valueOf(timestamp)+String.valueOf(rand);
+        System.out.println("sessionId String: "+value);
+        System.out.println("sessionId hashString: "+hashString(value));
+        return hashString(value);
+    }
+
+    public static String hashString(String input){
+        if(input == null){
+            return null;
+        }
+        try{
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] h = digest.digest(input.getBytes());
+            return bytesToHex(h);
+        }catch(Exception e){
+            System.out.println("MD5" + e.getMessage());
+            return null;
+        }
+
     }
 }

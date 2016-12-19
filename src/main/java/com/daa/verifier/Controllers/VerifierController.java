@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import com.daa.verifier.Controllers.crypto.BNCurve;
 import com.daa.verifier.Models.Issuer;
 import org.json.JSONObject;
+import java.util.List;
 
 import static com.daa.verifier.Controllers.utils.bytesToHex;
 import static com.daa.verifier.Controllers.utils.hexStringToByteArray;
@@ -34,6 +36,7 @@ import static com.daa.verifier.Controllers.utils.hexStringToByteArray;
 public class VerifierController {
     @Autowired
     private DataSource dataSource;
+
 
     public Service getService() {
         return service;
@@ -60,6 +63,7 @@ public class VerifierController {
     protected BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
     protected Issuer.IssuerPublicKey issuerPublicKey = null;
     protected SigData sigData = null;
+    protected List<String> listSessionId = new ArrayList<String>();
 
     public SigData getSigData() {
         return sigData;
@@ -347,6 +351,12 @@ public class VerifierController {
             response.setStatus(200);
             response.getWriter().println("OK, result: "+check);
             response.getWriter().println("OK, result add: "+add);
+            String sessionId = utils.generateSessionId();
+            response.getWriter().println("sessionId: "+sessionId);
+            this.listSessionId.add(sessionId);
+            response.getWriter().println("list sessionId: ");
+            response.getWriter().println(this.listSessionId.toString());
+            this.listSessionId.remove(sessionId);
         } catch (SQLException e) {
             System.out.println(e);
             response.setStatus(400);
