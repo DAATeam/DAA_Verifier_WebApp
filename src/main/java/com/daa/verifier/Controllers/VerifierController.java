@@ -1,30 +1,25 @@
 package com.daa.verifier.Controllers;
 
 import com.daa.verifier.Models.*;
-import com.google.gson.JsonObject;
+import com.daa.verifier.Repository.DatabaseOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.URL;
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStreamReader;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.io.IOException;
-import com.daa.verifier.Controllers.HttpConnection;
+
 import com.daa.verifier.Controllers.crypto.BNCurve;
 import com.daa.verifier.Models.Issuer;
 import org.json.JSONObject;
@@ -37,6 +32,9 @@ import static com.daa.verifier.Controllers.utils.hexStringToByteArray;
  */
 @Controller
 public class VerifierController {
+    @Autowired
+    private DataSource dataSource;
+
     public Service getService() {
         return service;
     }
@@ -342,10 +340,14 @@ public class VerifierController {
     @RequestMapping( method = RequestMethod.GET, value="/testData")
     public void  testRepository(HttpServletResponse response) throws IOException {
         try {
-            System.out.println("Success");
+            DatabaseOperation databaseOperation = new DatabaseOperation();
+            databaseOperation.setDataSource(dataSource);
+            Boolean check = databaseOperation.checkAppIdExisted(new VerifierSignature(1, "test"));
+            Boolean add = databaseOperation.addCertificate(new VerifierSignature(2, "change test 2"));
             response.setStatus(200);
-            response.getWriter().println("OK");
-        } catch (Exception e) {
+            response.getWriter().println("OK, result: "+check);
+            response.getWriter().println("OK, result add: "+add);
+        } catch (SQLException e) {
             System.out.println(e);
             response.setStatus(400);
             response.getWriter().println("FAIL");

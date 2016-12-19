@@ -4,8 +4,7 @@ USE `verifier`;
 --
 -- Table structure for table `book_detail`
 --
-CREATE TABLE `signature` (
-  `id` INTEGER NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `signature` (
   `app_id` INTEGER NOT NULL,
   `data` VARCHAR(255) NOT NULL,
   PRIMARY KEY (`app_id`)

@@ -1,20 +1,14 @@
 package com.daa.verifier.Models;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
+
 import javax.persistence.*;
 import java.io.Serializable;
 
 /**
  * Created by DK on 12/17/16.
  */
-@Entity
-@Table(name = "signature")
 public class VerifierSignature implements Serializable {
-    @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    @Column(name = "id")
-    private Long id;
-    @Column(name = "app_id", nullable = false)
     private int appId;
-    @Column(name = "data")
     private String data;
 
     protected VerifierSignature() {}
@@ -37,5 +31,14 @@ public class VerifierSignature implements Serializable {
 
     public void setData(String data) {
         this.data = data;
+    }
+
+    public Boolean checkExistDB() {
+
+        return true;
+    }
+
+    public String toString() {
+        return "appId: "+this.getAppId()+", data: "+this.getData();
     }
 }
