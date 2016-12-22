@@ -7,8 +7,8 @@ import org.json.JSONObject;
  */
 public class Config {
     public static final JSONObject PERMISSION_OBJECT = new JSONObject().put("service_permission", "user_name,user_job");
-//     public static final String IssuerUrl = "http://localhost:9081";
-    public static final String IssuerUrl = "http://localhost:8081/issuer";
+     public static final String IssuerUrl = "http://localhost:9081";
+//    public static final String IssuerUrl = "http://localhost:8081/issuer";
 //    public static final String IssuerUrl = "http://localhost:8080/issuer";
     public static final String USER_AGENT = "SP-App";
     public static final String REQUIRE_INFO = "service_permission";

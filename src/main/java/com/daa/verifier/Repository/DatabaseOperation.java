@@ -30,10 +30,10 @@ public class DatabaseOperation {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
     }
 
-    public boolean checkAppIdExisted(VerifierSignature verifierSignature) throws SQLException {
-        System.out.println("AppId to check Exist: " + verifierSignature.getAppId());
+    public boolean checkAppIdExisted(String appId) throws SQLException {
+        System.out.println("AppId to check Exist: " +appId);
         String sql = "select count(*) from signature where app_id=:appId";
-        SqlParameterSource namedParameters = new MapSqlParameterSource("appId", verifierSignature.getAppId());
+        SqlParameterSource namedParameters = new MapSqlParameterSource("appId", appId);
         int count = this.jdbcTemplate.queryForObject(
                 sql,
                 namedParameters, Integer.class);
@@ -42,9 +42,17 @@ public class DatabaseOperation {
         return count != 0;
     }
 
+    public String getAppData(Integer appId) throws SQLException {
+        String sql = "select data from signature where app_id=:appId";
+        SqlParameterSource namedParameters = new MapSqlParameterSource("appId", appId);
+        return this.jdbcTemplate.queryForObject(
+                sql,
+                namedParameters, String.class);
+    }
+
     public boolean addCertificate( VerifierSignature verifierSignature) throws SQLException {
         System.out.println("add Cert: "+verifierSignature.toString());
-        if(checkAppIdExisted(verifierSignature)) {
+        if(checkAppIdExisted(String.valueOf(verifierSignature.getAppId()))) {
             String sql = "update signature set data=:data where app_id=:appId";
             Map namedParameters = new HashMap();
             namedParameters.put("appId", verifierSignature.getAppId());

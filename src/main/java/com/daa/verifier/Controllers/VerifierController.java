@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,6 +17,7 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -64,6 +66,16 @@ public class VerifierController {
     protected Issuer.IssuerPublicKey issuerPublicKey = null;
     protected SigData sigData = null;
     protected List<String> listSessionId = new ArrayList<String>();
+    protected AppData appData = new AppData();
+    protected HashMap<Integer, ServiceProcess> listServiceProcessing = new HashMap();
+
+    public AppData getAppData() {
+        return appData;
+    }
+
+    public void setAppData(AppData appData) {
+        this.appData = appData;
+    }
 
     public SigData getSigData() {
         return sigData;
@@ -128,8 +140,7 @@ public class VerifierController {
             if (checkLogin(service)) {
                 this.setService(service);
                 response.setStatus(200);
-                response.getWriter().println("join Success");
-                response.getWriter().println("nonce number: "+this.getJoinData().getNonce());
+                response.getWriter().println("login Success");
             }
         }
 
@@ -196,6 +207,26 @@ public class VerifierController {
             response.setStatus(400);
             response.getWriter().println("ERROR: Join Proccess not yet!");
         }
+    }
+
+    @RequestMapping( method = RequestMethod.GET, value="/verify/{appId}")
+    public String Login(ModelMap model, @PathVariable Integer appId
+    ) throws IOException {
+        ServiceProcess serviceProcess = null;
+        try  {
+            serviceProcess = this.listServiceProcessing.get(appId);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
+        if (serviceProcess != null) {
+            model.put("serviceName", serviceProcess.getServiceName());
+            model.put("status", "Available");
+            System.out.println("appId get from path: "+appId);
+        } else {
+            model.put("serviceName", "");
+            model.put("status", "Unavailable!");
+        }
+        return "userauthen";
     }
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
@@ -274,13 +305,39 @@ public class VerifierController {
     }
     // join into issuer get Nonce
     public Boolean checkLogin(Service service) throws IOException {
-        joinData joinObject = join(service);
-        if (joinObject.getNonce() != null) {
-            this.setJoinData(joinObject);
+        return getDataService(service);
+    }
+
+    public Boolean getDataService( Service service ) throws IOException {
+        DatabaseOperation databaseOperation = new DatabaseOperation(dataSource);
+        try {
+            if(databaseOperation.checkAppIdExisted(service.getApp_Id().toString())) {
+                String data = databaseOperation.getAppData(service.getApp_Id());
+                AppData appData = new AppData(data);
+                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
+                this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
+                System.out.println("application data get Database: "+data);
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        HttpConnection http = new HttpConnection();
+        try {
+            String data = http.getApplicationData(Config.IssuerUrl, service.getApp_Id());
+            VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
+            databaseOperation.addCertificate(verifierSignature);
+            AppData appData = new AppData(data);
+            ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
+            this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
+            System.out.println("application data get from Issuer: "+data);
             return true;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return false;
-    }
+    };
+
     // edit IssuerUrl variables in Config if it have difference localhost:8081/issuer
     public joinData join(Service service) throws IOException {
         joinData responseData = new joinData();
@@ -346,7 +403,7 @@ public class VerifierController {
         try {
             DatabaseOperation databaseOperation = new DatabaseOperation();
             databaseOperation.setDataSource(dataSource);
-            Boolean check = databaseOperation.checkAppIdExisted(new VerifierSignature(1, "test"));
+            Boolean check = databaseOperation.checkAppIdExisted("1");
             Boolean add = databaseOperation.addCertificate(new VerifierSignature(2, "change test 2"));
             response.setStatus(200);
             response.getWriter().println("OK, result: "+check);

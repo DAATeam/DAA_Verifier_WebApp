@@ -43,6 +43,7 @@ public class HttpConnection {
         String result = readResponse(response);
         return new JSONObject(result);
     }
+
     public JSONObject sendJoinMessage1(String url, joinM1Data jm1) throws Exception {
         String urlJoin = url+"/jm1";
         HttpPost post = new HttpPost(urlJoin);
@@ -63,6 +64,7 @@ public class HttpConnection {
 
         return new JSONObject(result);
     }
+
     public JSONObject getCertificate(String url, SigData sigData) throws Exception {
         String urlJoin = url+"/cert";
         HttpPost post = new HttpPost(urlJoin);
@@ -84,6 +86,23 @@ public class HttpConnection {
         System.out.println("READ RESULT: "+result);
         return new JSONObject(result);
     }
+
+    public String getApplicationData(String url, Integer appId) throws Exception {
+        String urlGetApp = url+"/app";
+        HttpPost post = new HttpPost(urlGetApp);
+
+        post.setHeader("User-Agent", Config.USER_AGENT);
+
+        List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
+        urlParameters.add(new BasicNameValuePair("appId", appId.toString()));
+
+        post.setEntity(new UrlEncodedFormEntity(urlParameters));
+
+        HttpResponse response = this.client.execute(post);
+
+        return readResponse(response);
+    };
+
     public String readResponse(HttpResponse response) {
         try {
             BufferedReader rd = new BufferedReader(
