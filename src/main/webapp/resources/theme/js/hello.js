@@ -7,6 +7,6 @@ function hello() {
 window.onload = function() {
     hello();
 };
-$( "#hello" ).click(function() {
-    alert( "Handler for .click() called." );
-});
+//$( "#hello" ).click(function() {
+//    alert( "Handler for .click() called." );
+//});

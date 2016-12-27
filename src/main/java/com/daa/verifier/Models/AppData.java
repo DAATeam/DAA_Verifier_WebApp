@@ -31,6 +31,7 @@ public class AppData {
     }
 
     public JSONObject toJson() {
+        System.out.println("json object: "+ this.getData());
         return new JSONObject(this.getData());
     }
 

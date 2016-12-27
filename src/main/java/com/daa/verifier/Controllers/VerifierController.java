@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -221,58 +222,64 @@ public class VerifierController {
         if (serviceProcess != null) {
             model.put("serviceName", serviceProcess.getServiceName());
             model.put("status", "Available");
+            model.put("enable", true);
+            model.put("serviceId", appId);
             System.out.println("appId get from path: "+appId);
         } else {
             model.put("serviceName", "");
             model.put("status", "Unavailable!");
+            model.put("enable", false);
         }
         return "userauthen";
     }
+
+    @RequestMapping( method = RequestMethod.GET, value="/getCert/{appId}/{appSessionId}")
+    public void getCert(HttpServletResponse response, @PathVariable Integer appId, @PathVariable String appSessionId ) throws Exception {
+        ServiceProcess serviceProcess = null;
+        System.out.println("app sessionId: "+ appSessionId);
+        try  {
+            serviceProcess = this.listServiceProcessing.get(appId);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
+        if (serviceProcess != null) {
+            String data = getVerifierData(appId);
+            String sessionId = utils.generateSessionId();
+            this.listSessionId.add(sessionId);
+            String cert = null;
+            try {
+                cert = generateCertificate(appSessionId, sessionId, data);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (cert != null) {
+                response.setStatus(200);
+                response.getWriter().println(cert);
+            } else {
+                response.setStatus(400);
+                response.getWriter().println("Service can't get Certificate. Try again!");
+            }
+        } else {
+            response.setStatus(400);
+            response.getWriter().println("Service Unavailable!");
+        }
+    };
+
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
-                               @RequestParam("user_cert") String certificate,
-                               @RequestParam("user_sig") String signature,
-                               @RequestParam("user_mess") String message,
-                               @RequestParam("basename") String basename
+                               @RequestParam("information") String info,
+                               @RequestParam("sig") String sig,
+                               @RequestParam("status") String status
     ) throws IOException {
-        if (certificate == null || basename == null || signature == null || message == null) {
+        // fake verify ------------------------------->
+        if (info == null || sig == null || status == null) {
             response.setStatus(400);
             response.getWriter().println("ERROR: invalid input. not enough params");
         } else {
             Verifier verifier = new Verifier(this.getCurve());
-            byte[] cert = null;
-            byte[] sigMessage = null;
-            byte[] sig = null;
-            byte[] messageByte = null;
-            try {
-                cert = hexStringToByteArray(certificate);
-                sigMessage = signature.getBytes();
-                sig = hexStringToByteArray(signature);
-                messageByte = message.getBytes();
-            } catch (Exception e) {
-                System.out.println(e);
-                response.setStatus(400);
-                response.getWriter().println("FAIL! Your Certificate Invalid: "+certificate);
-            };
-            if (cert != null && sigMessage != null && sig != null && messageByte != null) {
-                Authenticator.EcDaaSignature ecDaaSignatureCert = new Authenticator.EcDaaSignature(cert, sigMessage, this.getCurve());
-                Authenticator.EcDaaSignature ecDaaSignatureSig = new Authenticator.EcDaaSignature(sig, messageByte, this.getCurve());
-                try {
-                    Boolean verifyCertResult = verifier.verify(ecDaaSignatureCert, basename, this.getIssuerPublicKey(),null);
-                    Boolean verifySigResult = verifier.verify(ecDaaSignatureSig, basename, this.getIssuerPublicKey(),null);
-                    if (verifyCertResult && verifySigResult) {
-                        response.setStatus(200);
-                        response.getWriter().println("SUCCESS! Your sent message is valid: "+Config.PERMISSION);
-                    } else {
-                        response.setStatus(400);
-                        response.getWriter().println("FAIL! Your sent message is invalid: "+Config.PERMISSION);
-                    }
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    response.setStatus(400);
-                    response.getWriter().println("Verify Session Error");
-                }
-            }
+            response.setStatus(200);
+            response.getWriter().println("Get Info From User success");
+            response.getWriter().println("Your info: "+info);
         }
     }
 
@@ -314,7 +321,7 @@ public class VerifierController {
             if(databaseOperation.checkAppIdExisted(service.getApp_Id().toString())) {
                 String data = databaseOperation.getAppData(service.getApp_Id());
                 AppData appData = new AppData(data);
-                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
+                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("appId"), service.getApp_Id().toString());
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get Database: "+data);
                 return true;
@@ -325,18 +332,36 @@ public class VerifierController {
         HttpConnection http = new HttpConnection();
         try {
             String data = http.getApplicationData(Config.IssuerUrl, service.getApp_Id());
-            VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
-            databaseOperation.addCertificate(verifierSignature);
-            AppData appData = new AppData(data);
-            ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
-            this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
-            System.out.println("application data get from Issuer: "+data);
-            return true;
+            AppData appData = null;
+            try {
+                appData = new AppData(data);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (appData != null) {
+                VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
+                databaseOperation.addCertificate(verifierSignature);
+                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
+                this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
+                System.out.println("application data get from Issuer: "+data);
+                return true;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
     };
+
+    public String getVerifierData( Integer appId) {
+        DatabaseOperation databaseOperation = new DatabaseOperation(dataSource);
+        String data = null;
+        try {
+            data = databaseOperation.getAppData(appId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
 
     // edit IssuerUrl variables in Config if it have difference localhost:8081/issuer
     public joinData join(Service service) throws IOException {
@@ -369,6 +394,7 @@ public class VerifierController {
             e.printStackTrace();
         }
     }
+
     public SigData createSignature(Authenticator authenticator, BNCurve curve) {
         SigData sigData = null;
         try {
@@ -397,6 +423,38 @@ public class VerifierController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String generateCertificate(String appSessionId, String verifierSessionId, String verifierData) throws Exception {
+        JSONObject json = new JSONObject();
+        JSONObject data = new JSONObject(verifierData);
+//        json.append("permission", data.getString("permission"));
+//        json.append("sessionId", verifierSessionId);
+//        json.append("status", "ok");
+
+//        json.append("sig", sig);
+        json.put("permission", data.getString("permission"));
+        json.put("sessionId", verifierSessionId);
+        json.put("status", "ok");
+        String sig = signMessage(appSessionId, data);
+        json.put("sig", sig);
+        System.out.println("certificate: "+json.toString());
+        return json.toString();
+    };
+    public String signMessage(String appSession,JSONObject data) throws Exception {
+        BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
+        String ipk = data.getString("ipk");
+        BigInteger gsk = new BigInteger(data.getString("gsk_permission"));
+        Issuer.IssuerPublicKey issuerPublicKey = new Issuer.IssuerPublicKey(curve,ipk);
+        Authenticator authenticator = new Authenticator(curve, issuerPublicKey, gsk);
+        String jm2Json = data.getString("credential_permission");
+        Issuer.JoinMessage2 jm2 = new Issuer.JoinMessage2(curve, jm2Json);
+        authenticator.EcDaaJoin2(jm2);
+        byte[] session = hexStringToByteArray(appSession);
+        // nearly appSession -> permission;
+        byte[] sigByte = authenticator.EcDaaSignWrt(session, Config.BASENAME_SERVICE, appSession).encode(curve);
+        System.out.println("sigMessage: "+ bytesToHex(sigByte));
+        return bytesToHex(sigByte);
     }
     @RequestMapping( method = RequestMethod.GET, value="/testData")
     public void  testRepository(HttpServletResponse response) throws IOException {

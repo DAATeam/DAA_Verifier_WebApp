@@ -1,19 +1,29 @@
 /**
  * Created by DK on 12/9/16.
  */
-const localAppUrl = 'http://localhost:6969/';
+const localAppUrl = 'http://localhost:6970/';
 const verifierUrl = 'http://localhost:8090/';
-window.onload = function() {
+function clickAuthen() {
     process(localAppUrl+'new', 'get', null, getSessionSuccess, communicateFail, 'get sessionId from local App');
+}
+window.onload = function() {
+    if (document.getElementById("button-authen").value == "true") {
+        document.getElementById("button-authen").disabled = false;
+    }
 };
 function getSessionSuccess(appData) {
-    process(verifierUrl+'getSession', 'post', appData, sendVerifierCertToLocalApp,
+    var serviceId = document.getElementById("serviceId").getAttribute("value");
+    console.log('App sessionId:  ', appData);
+    console.log('AppId:  ', serviceId);
+    process(verifierUrl+'getCert/'+serviceId+'/'+appData, 'get', appData, sendVerifierCertToLocalApp,
         communicateFail, 'get certificate from verifier');
 }
 function sendVerifierCertToLocalApp(verifierData) {
+    console.log('data from verifier: ', verifierData);
     process(localAppUrl+'verify', 'post', verifierData, sendAppCertToVerifier, communicateFail, "send verifier certificate to app");
 }
 function sendAppCertToVerifier(appData) {
+    console.log('data from App: ', appData);
     process(verifierUrl+'verify', 'post', appData, verifySuccess, communicateFail, 'send app daa to verifier');
 }
 function verifySuccess(message) {

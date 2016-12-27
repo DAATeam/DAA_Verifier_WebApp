@@ -61,6 +61,9 @@ public class Authenticator {
 		}
 		this.Q = this.curve.getG1().multiplyPoint(this.sk);
 		this.joinState = JoinState.NOT_JOINED;
+		if (sk != null) {
+			this.joinState = JoinState.IN_PROGRESS;
+		}
 	}
 	
 	/**
@@ -93,7 +96,7 @@ public class Authenticator {
 		if(this.joinState != JoinState.IN_PROGRESS) {
 			throw new IllegalStateException("The authenticator has already joined or a join operation is in progress");
 		}
-		
+
 		boolean success = true;
 		
 		// Check that the points are indeed in the group
@@ -101,7 +104,7 @@ public class Authenticator {
 		success &= this.curve.isInG1(message.b);
 		success &= this.curve.isInG1(message.c);
 		success &= this.curve.isInG1(message.d);
-		
+
 		// Check that this is not the trivial credential (1,1,1,1)
 		success &= !this.curve.isIdentityG1(message.a);
 		
@@ -117,7 +120,6 @@ public class Authenticator {
 		// Verify credential
 		success &= this.curve.pair(message.a, this.issuerPk.Y).equals(this.curve.pair(message.b, this.curve.getG2()));
 		success &= this.curve.pair(message.c, this.curve.getG2()).equals(this.curve.pair(message.a.clone().addPoint(message.d), this.issuerPk.X));
-		
 		if(success) {
 			// Store the credential
 			this.a = message.a;
@@ -126,7 +128,6 @@ public class Authenticator {
 			this.d = message.d;
 			this.joinState = JoinState.JOINED;
 		}
-		
 		return success;
 	}
 	
@@ -173,7 +174,6 @@ public class Authenticator {
 		if(this.joinState != JoinState.JOINED){
 			throw new IllegalStateException("The authenticator must join before it can sign");
 		}
-
 		//byte[] krd = this.buildAndEncodeKRD();
 		byte[] krd = message.getBytes();
 

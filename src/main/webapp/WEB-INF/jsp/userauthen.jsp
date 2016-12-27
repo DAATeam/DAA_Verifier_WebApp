@@ -25,6 +25,10 @@
     <div>Service Status</div>
     <div>${status}</div>
 </div>
+<div id="serviceId" value=${serviceId}></div>
+<div id="authentication" class="authentication">
+    <button id="button-authen" value=${enable} onclick="clickAuthen()" disabled>Authentication</button>
+</div>
 </body>
 <script type="text/javascript" src="<c:url value="/resources/theme/js/hello.js" />"></script>
 <script type="text/javascript" src="<c:url value="/resources/theme/js/communication.js" />"></script>
