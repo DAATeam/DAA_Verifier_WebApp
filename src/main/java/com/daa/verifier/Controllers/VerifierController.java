@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -267,19 +264,23 @@ public class VerifierController {
 
     @RequestMapping(value = "/verify", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
-                               @RequestParam("information") String info,
-                               @RequestParam("sig") String sig,
-                               @RequestParam("status") String status
+                               @RequestBody String info
     ) throws IOException {
         // fake verify ------------------------------->
-        if (info == null || sig == null || status == null) {
+        if (info == null) {
             response.setStatus(400);
-            response.getWriter().println("ERROR: invalid input. not enough params");
+            response.getWriter().println("ERROR: body string is Null");
         } else {
-            Verifier verifier = new Verifier(this.getCurve());
-            response.setStatus(200);
-            response.getWriter().println("Get Info From User success");
-            response.getWriter().println("Your info: "+info);
+            UserSig userSig = new UserSig(info);
+            if (userSig.getSig() != null) {
+                Verifier verifier = new Verifier(this.getCurve());
+                response.setStatus(200);
+                response.getWriter().println("Get Info From User success");
+                response.getWriter().println("Your info: "+info);
+            } else {
+                response.setStatus(400);
+                response.getWriter().println("ERROR: invalid input. not enough params");
+            }
         }
     }
 
