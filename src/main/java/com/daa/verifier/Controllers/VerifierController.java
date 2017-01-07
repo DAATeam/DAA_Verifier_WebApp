@@ -2,6 +2,7 @@ package com.daa.verifier.Controllers;
 
 import com.daa.verifier.Models.*;
 import com.daa.verifier.Repository.DatabaseOperation;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
@@ -273,7 +274,6 @@ public class VerifierController {
         } else {
             UserSig userSig = new UserSig(info);
             if (userSig.getSig() != null) {
-                Verifier verifier = new Verifier(this.getCurve());
                 response.setStatus(200);
                 response.getWriter().println("Get Info From User success");
                 response.getWriter().println("Your info: "+info);
@@ -456,6 +456,16 @@ public class VerifierController {
         byte[] sigByte = authenticator.EcDaaSignWrt(session, Config.BASENAME_SERVICE, appSession).encode(curve);
         System.out.println("sigMessage: "+ bytesToHex(sigByte));
         return bytesToHex(sigByte);
+    }
+
+    public Boolean VerifyUserInfo(String sessionId, UserSig userSig) {
+        Verifier verifier = new Verifier(this.getCurve());
+        // byte[] message
+        // byte[] session
+        // EcDaaSignature sig
+        // String appId
+        // IssuerPublicKey ipk
+        return false;
     }
     @RequestMapping( method = RequestMethod.GET, value="/testData")
     public void  testRepository(HttpServletResponse response) throws IOException {
