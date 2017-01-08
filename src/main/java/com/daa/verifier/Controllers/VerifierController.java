@@ -64,7 +64,7 @@ public class VerifierController {
     protected BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
     protected Issuer.IssuerPublicKey issuerPublicKey = null;
     protected SigData sigData = null;
-    protected List<String> listSessionId = new ArrayList<String>();
+    protected HashMap<String, String> listSessionId = new HashMap();
     protected AppData appData = new AppData();
     protected HashMap<Integer, ServiceProcess> listServiceProcessing = new HashMap();
 
@@ -144,7 +144,7 @@ public class VerifierController {
         }
 
     }
-    @RequestMapping( method = RequestMethod.GET, value="/weblogin")
+    @RequestMapping( method = RequestMethod.GET, value="/servicelogin")
     public String Login(ModelMap model
     ) throws IOException {
         model.put("serviceName", "DAA Authen");
@@ -154,7 +154,7 @@ public class VerifierController {
             cert = this.getCertData().getCertificate();
         }
         model.put("serviceCertificate", cert);
-        return "login";
+        return "serviceLogin";
     }
 
     @RequestMapping( method = RequestMethod.GET, value="/verify")
@@ -243,7 +243,7 @@ public class VerifierController {
         if (serviceProcess != null) {
             String data = getVerifierData(appId);
             String sessionId = utils.generateSessionId();
-            this.listSessionId.add(sessionId);
+            this.listSessionId.put(appSessionId, sessionId);
             String cert = null;
             try {
                 cert = generateCertificate(appSessionId, sessionId, data);
@@ -263,25 +263,34 @@ public class VerifierController {
         }
     };
 
-    @RequestMapping(value = "/verify", method = RequestMethod.POST)
+    @RequestMapping(value = "/verify/{appSession}", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
+                               @PathVariable String appSession,
                                @RequestBody String info
     ) throws IOException {
-        // fake verify ------------------------------->
-        if (info == null) {
+        if (info == null || appSession == null) {
             response.setStatus(400);
-            response.getWriter().println("ERROR: body string is Null");
+            response.getWriter().println("ERROR: body info or appSession string is Null");
         } else {
             UserSig userSig = new UserSig(info);
+            System.out.println("verify with appSession: "+appSession);
+            System.out.println("verify with serviceSession: "+this.listSessionId.get(appSession));
             if (userSig.getSig() != null) {
-                response.setStatus(200);
-                response.getWriter().println("Get Info From User success");
-                response.getWriter().println("Your info: "+info);
+                Boolean verifyResult = VerifyUserInfo(this.listSessionId.get(appSession), userSig);
+                if (verifyResult) {
+                    response.setStatus(200);
+                    response.getWriter().println("Get Info From User success");
+                    response.getWriter().println("Your info: "+info);
+                } else {
+                    response.setStatus(400);
+                    response.getWriter().println("Verify User Fail!!!");
+                }
             } else {
                 response.setStatus(400);
                 response.getWriter().println("ERROR: invalid input. not enough params");
             }
         }
+        this.listSessionId.remove(appSession);
     }
 
     // For Test service provider certificate
@@ -342,7 +351,7 @@ public class VerifierController {
             if (appData != null) {
                 VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
                 databaseOperation.addCertificate(verifierSignature);
-                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("service_name"), service.getApp_Id().toString());
+                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("level_customer"), service.getApp_Id().toString());
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get from Issuer: "+data);
                 return true;
@@ -450,22 +459,36 @@ public class VerifierController {
         Authenticator authenticator = new Authenticator(curve, issuerPublicKey, gsk);
         String jm2Json = data.getString("credential_permission");
         Issuer.JoinMessage2 jm2 = new Issuer.JoinMessage2(curve, jm2Json);
-        authenticator.EcDaaJoin2(jm2);
-        byte[] session = hexStringToByteArray(appSession);
+        System.out.println("get data: "+data.toString());
+        System.out.println("get permission: "+data.getString("permission"));
+        authenticator.EcDaaJoin2Wrt(jm2, data.getString("permission"));
+        byte[] info = hexStringToByteArray(data.getString("permission"));
         // nearly appSession -> permission;
-        byte[] sigByte = authenticator.EcDaaSignWrt(session, Config.BASENAME_SERVICE, appSession).encode(curve);
+        byte[] sigByte = authenticator.EcDaaSignWrt(info, Config.BASENAME_SERVICE, appSession).encode(curve);
         System.out.println("sigMessage: "+ bytesToHex(sigByte));
         return bytesToHex(sigByte);
     }
 
-    public Boolean VerifyUserInfo(String sessionId, UserSig userSig) {
+    public Boolean VerifyUserInfo(String serviceSessionId, UserSig userSig) {
         Verifier verifier = new Verifier(this.getCurve());
         // byte[] message
+        byte[] information = hexStringToByteArray(userSig.getInformation().toString());
         // byte[] session
+        byte[] sessionId = hexStringToByteArray(serviceSessionId);
         // EcDaaSignature sig
+        Authenticator.EcDaaSignature ecDaaSignature = new Authenticator.EcDaaSignature(hexStringToByteArray(userSig.getSig()), sessionId, this.getCurve());
         // String appId
+        String baseName = "verification";
         // IssuerPublicKey ipk
-        return false;
+        Issuer.IssuerPublicKey ipk = this.getIssuerPublicKey();
+        Boolean resultVerify = false;
+        try {
+            resultVerify = verifier.verifyWrt(information, sessionId, ecDaaSignature, baseName, ipk, null);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Result Verify: "+resultVerify);
+        return resultVerify;
     }
     @RequestMapping( method = RequestMethod.GET, value="/testData")
     public void  testRepository(HttpServletResponse response) throws IOException {
@@ -479,7 +502,7 @@ public class VerifierController {
             response.getWriter().println("OK, result add: "+add);
             String sessionId = utils.generateSessionId();
             response.getWriter().println("sessionId: "+sessionId);
-            this.listSessionId.add(sessionId);
+            this.listSessionId.put(sessionId, sessionId);
             response.getWriter().println("list sessionId: ");
             response.getWriter().println(this.listSessionId.toString());
             this.listSessionId.remove(sessionId);

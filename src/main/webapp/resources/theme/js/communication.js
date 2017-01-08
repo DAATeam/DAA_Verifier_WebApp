@@ -1,8 +1,9 @@
 /**
  * Created by DK on 12/9/16.
  */
-const localAppUrl = 'http://localhost:6970/';
+const localAppUrl = 'http://localhost:6969/';
 const verifierUrl = 'http://localhost:8090/';
+var sessionId = null;
 function clickAuthen() {
     process(localAppUrl+'new', 'get', null, getSessionSuccess, communicateFail, 'get sessionId from local App');
 }
@@ -15,6 +16,7 @@ function getSessionSuccess(appData) {
     var serviceId = document.getElementById("serviceId").getAttribute("value");
     console.log('App sessionId:  ', appData);
     console.log('AppId:  ', serviceId);
+    sessionId = appData;
     process(verifierUrl+'getCert/'+serviceId+'/'+appData, 'get', appData, sendVerifierCertToLocalApp,
         communicateFail, 'get certificate from verifier');
 }
@@ -24,7 +26,7 @@ function sendVerifierCertToLocalApp(verifierData) {
 }
 function sendAppCertToVerifier(appData) {
     console.log('data from App: ', appData);
-    process(verifierUrl+'verify', 'post', appData, verifySuccess, communicateFail, 'send app daa to verifier');
+    process(verifierUrl+'verify/'+sessionId, 'post', appData, verifySuccess, communicateFail, 'send app daa to verifier');
 }
 function verifySuccess(message) {
     console.log('verify Success: ', message);
