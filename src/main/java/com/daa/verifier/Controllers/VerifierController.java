@@ -134,27 +134,43 @@ public class VerifierController {
                       @RequestParam("app_id") Integer app_Id,
                       @RequestParam("m") String m
     ) throws IOException {
-        if (app_Id != null && m != null) {
+        if (app_Id != null && m != null && (app_Id instanceof Integer)) {
             Service service = new Service(app_Id, m);
             if (checkLogin(service)) {
                 this.setService(service);
                 response.setStatus(200);
-                response.getWriter().println("login Success");
+                JSONObject json = new JSONObject();
+                json.put("status", "login success");
+                json.put("link", Config.VerifierUrl+"/loginResult/"+app_Id.toString());
+                response.setContentType("application/json");
+                json.write(response.getWriter());
+            } else {
+                response.setStatus(400);
+                response.getWriter().println("login Fail");
             }
+        } else {
+            response.setStatus(400);
+            response.getWriter().println("app_Id or m Invalid");
         }
 
     }
     @RequestMapping( method = RequestMethod.GET, value="/servicelogin")
     public String Login(ModelMap model
     ) throws IOException {
-        model.put("serviceName", "DAA Authen");
-        model.put("test", "DAA");
-        String cert = "no Service Login!";
-        if (this.getCertData() != null && this.getCertData().getCertificate() != null) {
-            cert = this.getCertData().getCertificate();
-        }
-        model.put("serviceCertificate", cert);
         return "serviceLogin";
+    }
+
+    @RequestMapping( method = RequestMethod.GET, value="/loginResult/{appId}")
+    public String LoginResult(ModelMap model, @PathVariable Integer appId
+    ) throws IOException {
+        ServiceProcess ser = this.listServiceProcessing.get(appId);
+        if (ser != null) {
+            model.put("serviceName", ser.getServiceName());
+            String url = Config.VerifierUrl+"/verify/"+appId.toString();
+            model.put("url", url);
+            return "loginResult";
+        }
+        return "homepage";
     }
 
     @RequestMapping( method = RequestMethod.GET, value="/verify")
@@ -331,7 +347,7 @@ public class VerifierController {
             if(databaseOperation.checkAppIdExisted(service.getApp_Id().toString())) {
                 String data = databaseOperation.getAppData(service.getApp_Id());
                 AppData appData = new AppData(data);
-                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("appId"), service.getApp_Id().toString());
+                ServiceProcess serviceProcess = new ServiceProcess(getServiceName(data), service.getApp_Id().toString());
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get Database: "+data);
                 return true;
@@ -351,7 +367,7 @@ public class VerifierController {
             if (appData != null) {
                 VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
                 databaseOperation.addCertificate(verifierSignature);
-                ServiceProcess serviceProcess = new ServiceProcess(appData.getPropertyFromData("level_customer"), service.getApp_Id().toString());
+                ServiceProcess serviceProcess = new ServiceProcess(getServiceName(data), service.getApp_Id().toString());
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get from Issuer: "+data);
                 return true;
@@ -489,6 +505,12 @@ public class VerifierController {
         }
         System.out.println("Result Verify: "+resultVerify);
         return resultVerify;
+    }
+
+    public String getServiceName(String appData) {
+        JSONObject json = new JSONObject(appData);
+        JSONObject info = new JSONObject(json.getString("level_customer"));
+        return info.getString("service_name");
     }
     @RequestMapping( method = RequestMethod.GET, value="/testData")
     public void  testRepository(HttpServletResponse response) throws IOException {

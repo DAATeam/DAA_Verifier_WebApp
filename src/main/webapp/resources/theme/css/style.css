@@ -36,6 +36,7 @@ body {
 }
 
 #wrappermiddle {
+	position: relative;
 	background:url(../images/wrapper_middle.png) repeat-y;
 	height:240px;
 }
@@ -84,18 +85,6 @@ body {
 	height:50px;
 }
 
-#url{
-	display:block;
-	width:276px;
-	height:45px;
-	background:transparent;
-	border:0;
-	color:#bdbdbd;
-	font-family:helvetica, sans-serif;
-	font-size:14px;
-	padding-left:20px;
-}
-
 #url_user {
 	position:absolute;
 	display:block;
@@ -105,11 +94,11 @@ body {
 }
 
 #password_input {
-	margin-left:25px;
-	position:absolute;
-	width:300;
-	height:50px;
-	margin-top:100px;
+	margin-left: 25px;
+	position: absolute;
+	width: 300px;
+	height: 50px;
+	margin-top: 100px;
 }
 
 #password_inputleft {
@@ -141,7 +130,7 @@ body {
 	margin-left:4px;
 }
 
-#submit{
+#submitButton{
 	float:left;
 	position:relative;
 	padding:0;
@@ -226,4 +215,40 @@ body {
 
 #powered a:hover{
 	color:#292929;
+}
+.input {
+	display:block;
+	width:276px;
+	height:45px;
+	background:transparent;
+	border:0;
+	color:#bdbdbd;
+	font-family:helvetica, sans-serif;
+	font-size:14px;
+	padding-left:20px;
+}
+#error {
+	color: red;
+}
+#err_area {
+	position: absolute;
+	bottom: 0;
+	text-align: center;
+	width: 100%;
+}
+
+.serviceName {
+	position: inherit !important;
+	text-align: center;
+	margin: 0;
+}
+.labelUrl {
+	font-weight: bold;
+	text-align: center;
+	font-size: 15px;
+	padding: 30px 0;
+}
+.url {
+	text-align: center;
+	font-size: 15px;
 }
