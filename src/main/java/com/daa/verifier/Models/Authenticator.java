@@ -161,6 +161,7 @@ public class Authenticator {
 		success &= this.curve.pair(message.a, this.issuerPk.Y).equals(this.curve.pair(message.b, this.curve.getG2()));
 		success &= this.curve.pair(message.c, this.curve.getG2()).equals(this.curve.pair(message.a.clone().addPoint(message.d.multiplyPoint(l)), this.issuerPk.X));
 
+
 		if(success) {
 			// Store the credential
 			this.a = message.a;
@@ -212,14 +213,14 @@ public class Authenticator {
 		return new EcDaaSignature(r, s, t, w, c2, s2, krd);
 	}
 
-	public EcDaaSignature EcDaaSignWrt(byte[] session ,String basename, String message ) throws NoSuchAlgorithmException {
+	public EcDaaSignature EcDaaSignWrt(byte[] info ,String basename, String message ) throws NoSuchAlgorithmException {
 		if(this.joinState != JoinState.JOINED){
 			throw new IllegalStateException("The authenticator must join before it can sign");
 		}
 
 		//byte[] krd = this.buildAndEncodeKRD();
 		byte[] krd = message.getBytes();
-		BigInteger h = this.curve.hashModOrder(session);
+		BigInteger h = this.curve.hashModOrder(info);
 		// Randomize the credential
 		BigInteger l = this.curve.getRandomModOrder(random);
 		//BigInteger l = this.curve.hashModOrder(session);

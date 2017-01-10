@@ -288,10 +288,15 @@ public class VerifierController {
             response.setStatus(400);
             response.getWriter().println("ERROR: body info or appSession string is Null");
         } else {
-            UserSig userSig = new UserSig(info);
+            UserSig userSig = null;
+            try {
+                userSig = new UserSig(info);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             System.out.println("verify with appSession: "+appSession);
             System.out.println("verify with serviceSession: "+this.listSessionId.get(appSession));
-            if (userSig.getSig() != null) {
+            if (userSig != null) {
                 Boolean verifyResult = VerifyUserInfo(this.listSessionId.get(appSession), userSig);
                 if (verifyResult) {
                     response.setStatus(200);
@@ -348,6 +353,9 @@ public class VerifierController {
                 String data = databaseOperation.getAppData(service.getApp_Id());
                 AppData appData = new AppData(data);
                 ServiceProcess serviceProcess = new ServiceProcess(getServiceName(data), service.getApp_Id().toString());
+                String ipk = appData.getPropertyFromData("ipk");
+                Issuer.IssuerPublicKey issuerPublicKey = new Issuer.IssuerPublicKey(this.getCurve(),ipk);
+                this.setIssuerPublicKey(issuerPublicKey);
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get Database: "+data);
                 return true;
@@ -368,6 +376,9 @@ public class VerifierController {
                 VerifierSignature verifierSignature = new VerifierSignature(service.getApp_Id(), data);
                 databaseOperation.addCertificate(verifierSignature);
                 ServiceProcess serviceProcess = new ServiceProcess(getServiceName(data), service.getApp_Id().toString());
+                String ipk = appData.getPropertyFromData("ipk");
+                Issuer.IssuerPublicKey issuerPublicKey = new Issuer.IssuerPublicKey(this.getCurve(),ipk);
+                this.setIssuerPublicKey(issuerPublicKey);
                 this.listServiceProcessing.put(service.getApp_Id(),serviceProcess);
                 System.out.println("application data get from Issuer: "+data);
                 return true;
@@ -454,34 +465,36 @@ public class VerifierController {
     public String generateCertificate(String appSessionId, String verifierSessionId, String verifierData) throws Exception {
         JSONObject json = new JSONObject();
         JSONObject data = new JSONObject(verifierData);
-//        json.append("permission", data.getString("permission"));
-//        json.append("sessionId", verifierSessionId);
-//        json.append("status", "ok");
-
-//        json.append("sig", sig);
         json.put("permission", data.getString("permission"));
         json.put("sessionId", verifierSessionId);
         json.put("status", "ok");
         String sig = signMessage(appSessionId, data);
         json.put("sig", sig);
+        JSONObject per = new JSONObject(data.getString("permission"));
         System.out.println("certificate: "+json.toString());
+        ServiceSig serviceSig = new ServiceSig("ok", sig, per, verifierSessionId);
+        System.out.println("-------------> verify SERVICE: "+VerifyServiceInfo(verifierSessionId, serviceSig));
         return json.toString();
     };
     public String signMessage(String appSession,JSONObject data) throws Exception {
+        // curve TPM_ECC_BN_P256
         BNCurve curve = BNCurve.createBNCurveFromName(Config.CURVE_NAME);
-        String ipk = data.getString("ipk");
+        // get gsk permission
         BigInteger gsk = new BigInteger(data.getString("gsk_permission"));
-        Issuer.IssuerPublicKey issuerPublicKey = new Issuer.IssuerPublicKey(curve,ipk);
+        // ipk
+        Issuer.IssuerPublicKey issuerPublicKey = this.getIssuerPublicKey();
+        // create authenticator
         Authenticator authenticator = new Authenticator(curve, issuerPublicKey, gsk);
+        // create jm2
         String jm2Json = data.getString("credential_permission");
         Issuer.JoinMessage2 jm2 = new Issuer.JoinMessage2(curve, jm2Json);
-        System.out.println("get data: "+data.toString());
-        System.out.println("get permission: "+data.getString("permission"));
+
+        // joinM2
         authenticator.EcDaaJoin2Wrt(jm2, data.getString("permission"));
-        byte[] info = hexStringToByteArray(data.getString("permission"));
-        // nearly appSession -> permission;
+
+        byte[] info = data.getString("permission").getBytes();
+        // sign
         byte[] sigByte = authenticator.EcDaaSignWrt(info, Config.BASENAME_SERVICE, appSession).encode(curve);
-        System.out.println("sigMessage: "+ bytesToHex(sigByte));
         return bytesToHex(sigByte);
     }
 
@@ -507,6 +520,28 @@ public class VerifierController {
         return resultVerify;
     }
 
+    public Boolean VerifyServiceInfo(String serviceSessionId, ServiceSig serviceSig) {
+        System.out.println("call verify");
+        Verifier verifier = new Verifier(this.getCurve());
+        // byte[] message
+        byte[] information = hexStringToByteArray(serviceSig.getPermission().toString());
+        // byte[] session
+        byte[] sessionId = hexStringToByteArray(serviceSessionId);
+        // EcDaaSignature sig
+        Authenticator.EcDaaSignature ecDaaSignature = new Authenticator.EcDaaSignature(hexStringToByteArray(serviceSig.getSig()), sessionId, this.getCurve());
+        // String appId
+        String baseName = "permission";
+        // IssuerPublicKey ipk
+        Issuer.IssuerPublicKey ipk = this.getIssuerPublicKey();
+        Boolean resultVerify = false;
+        try {
+            resultVerify = verifier.verifyWrt(information, sessionId, ecDaaSignature, baseName, ipk, null);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Result Verify: "+resultVerify);
+        return resultVerify;
+    }
     public String getServiceName(String appData) {
         JSONObject json = new JSONObject(appData);
         JSONObject info = new JSONObject(json.getString("level_customer"));

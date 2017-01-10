@@ -1,10 +1,12 @@
 /**
  * Created by DK on 12/9/16.
  */
-const localAppUrl = 'http://localhost:6969/';
+//const localAppUrl = 'http://localhost:6969/';
+const localAppUrl = 'http://localhost:6970/';
 const verifierUrl = 'http://localhost:8090/';
 var sessionId = null;
 function clickAuthen() {
+    console.log('click authen');
     process(localAppUrl+'new', 'get', null, getSessionSuccess, communicateFail, 'get sessionId from local App');
 }
 window.onload = function() {

@@ -20,8 +20,7 @@
     <div id="wrappertop"></div>
 
     <div id="wrappermiddle">
-        <div id="hello" class="hello">DAA ${serviceName} SERVICE PROVIDER LOGIN PAGE</div>
-        <p>Welcome You to our service</p>
+        <p>Welcome to our service</p>
         <div id="name" class="info">
             <div>Service Name</div>
             <div>${serviceName}</div>
