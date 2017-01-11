@@ -17,7 +17,7 @@ body {
 	font-size: 13px;
 	line-height: 20px;
 	min-width: 998px;
-	border-top:3px solid #919191;
+	/*border-top:3px solid #919191;*/
 	background:url(../images/BG.jpg) repeat;
 }
 #wrapper {	
@@ -251,4 +251,72 @@ body {
 .url {
 	text-align: center;
 	font-size: 15px;
+}
+
+.LabelText {
+	font-size: 20px;
+	font-weight: bold;
+	font-family: Myriad Pro;
+	text-transform: uppercase;
+	text-shadow: #fff 2px 2px 2px;
+	text-align: center;
+}
+
+.middle {
+	padding: 0 15px;
+	position: relative;
+	height: 88%;
+}
+.serviceInfo {
+	margin-top: 30px;
+}
+.authen-error {
+
+}
+.info {
+	padding-left: 15px;
+}
+.labelInfo {
+	font-size: 14px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+.authentication {
+	position: absolute;
+	bottom: 30px;
+	position: absolute;
+	width: 92%;
+	text-align: center;
+}
+.buttonAuthen {
+	height: 30px;
+	width: 50%;
+	background-color: #A9DC75;
+	font-weight: bold;
+	color: black;
+	border-color: #A9DC75;
+	border-radius: 5px;
+	color: #4E5D3C;
+	cursor: pointer;
+	text-transform: uppercase;
+}
+
+.headerBackground {
+	height: 40px;
+	width: 100%;
+	background-image: url("/resources/theme/images/back.png");
+}
+.hello {
+	text-align: center;
+	font-size: 25px;
+	font-weight: bold;
+	font-style: normal;
+	color: green;
+	margin-top: 32px;
+}
+.time {
+	text-align: center;
+	color: green;
+	font-size: 20px;
+	margin-top: 16px;
 }

@@ -18,7 +18,9 @@
     <link href="<c:url value="/resources/theme/css/style.css" />" rel="stylesheet">
 </head>
 <body>
-
+<div>
+    <jsp:include page="header.jsp" flush="true" />
+</div>
 <div id="wrapper">
     <div id="wrappertop"></div>
 

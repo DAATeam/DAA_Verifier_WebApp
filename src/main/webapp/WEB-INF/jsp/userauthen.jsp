@@ -16,22 +16,30 @@
     <title>DAA ${serviceName} SERVICE PROVIDER LOGIN PAGE</title>
 </head>
 <body>
+<div>
+    <jsp:include page="header.jsp" flush="true" />
+</div>
 <div id="wrapper">
     <div id="wrappertop"></div>
 
     <div id="wrappermiddle">
-        <p>Welcome to our service</p>
-        <div id="name" class="info">
-            <div>Service Name</div>
-            <div>${serviceName}</div>
-        </div>
-        <div id="certificate" class="info">
-            <div>Service Status</div>
-            <div>${status}</div>
-        </div>
-        <div id="serviceId" value=${serviceId}></div>
-        <div id="authentication" class="authentication">
-            <button id="button-authen" value=${enable} onclick="clickAuthen()" disabled>Authentication</button>
+        <div class="middle">
+            <p class="LabelText">Welcome to ${serviceName} service</p>
+            <div class="serviceInfo">
+                <span class="labelInfo">Service Information</span>
+                <div id="name" class="info">
+                    <span>Service Name: ${serviceName}</span>
+                </div>
+                <div id="certificate" class="info">
+                    <span>Service Status: ${status}</span>
+                </div>
+            </div>
+            <div id="authentication" class="authentication">
+                <button class="buttonAuthen" id="button-authen" value=${enable} onclick="clickAuthen()" disabled>Authentication</button>
+            </div>
+            <div class="authen-error">
+                <span>${error}</span>
+            </div>
         </div>
     </div>
 
