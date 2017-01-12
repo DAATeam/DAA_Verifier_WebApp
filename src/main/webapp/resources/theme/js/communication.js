@@ -5,8 +5,10 @@
 const localAppUrl = 'http://localhost:6970/';
 const verifierUrl = 'http://localhost:8090/';
 var sessionId = null;
+var servicePageId = null;
 function clickAuthen() {
-    console.log('click authen');
+    var test = "${serviceId}";
+    console.log('click authen', test);
     process(localAppUrl+'new', 'get', null, getSessionSuccess, communicateFail, 'get sessionId from local App');
 }
 window.onload = function() {
@@ -16,6 +18,7 @@ window.onload = function() {
 };
 function getSessionSuccess(appData) {
     var serviceId = document.getElementById("serviceId").getAttribute("value");
+    servicePageId = serviceId;
     console.log('App sessionId:  ', appData);
     console.log('AppId:  ', serviceId);
     sessionId = appData;
@@ -28,15 +31,17 @@ function sendVerifierCertToLocalApp(verifierData) {
 }
 function sendAppCertToVerifier(appData) {
     console.log('data from App: ', appData);
-    process(verifierUrl+'verify/'+sessionId, 'post', appData, verifySuccess, communicateFail, 'send app daa to verifier');
+    process(verifierUrl+'verify/'+servicePageId+'/'+sessionId, 'post', appData, verifySuccess, communicateFail, 'send app daa to verifier');
 }
 function verifySuccess(message) {
     console.log('verify Success: ', message);
+    document.getElementById("successAuthen").innerText = "Verify User Success!"
 }
 function communicateFail(xhr, err, message) {
     console.log('xhr: ', xhr);
     console.log('communicate Fail: ', err);
     console.log('step Fail: ', message);
+    document.getElementById("errorAuthen").innerText = "Verify User Fail!"
 }
 function process(url, type, data, response, error, step) {
     if (type == "get") {

@@ -271,7 +271,18 @@ body {
 	margin-top: 30px;
 }
 .authen-error {
-
+	position: absolute;
+	bottom: 0;
+	text-align: center;
+	width: 92%;
+	color: red;
+}
+.authen-success {
+	position: absolute;
+	bottom: 0;
+	text-align: center;
+	width: 92%;
+	color: lawngreen;
 }
 .info {
 	padding-left: 15px;
@@ -302,9 +313,11 @@ body {
 }
 
 .headerBackground {
-	height: 40px;
+	height: 175px;
+	background-size: cover;
+	background-repeat: no-repeat;
 	width: 100%;
-	background-image: url("/resources/theme/images/back.png");
+	background-image: url("/resources/theme/images/header.png");
 }
 .hello {
 	text-align: center;

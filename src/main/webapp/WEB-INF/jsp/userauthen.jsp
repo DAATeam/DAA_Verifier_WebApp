@@ -33,13 +33,13 @@
                 <div id="certificate" class="info">
                     <span>Service Status: ${status}</span>
                 </div>
+                <div id="serviceId" value=${serviceId} ></div>
             </div>
             <div id="authentication" class="authentication">
                 <button class="buttonAuthen" id="button-authen" value=${enable} onclick="clickAuthen()" disabled>Authentication</button>
             </div>
-            <div class="authen-error">
-                <span>${error}</span>
-            </div>
+            <div id="errorAuthen" class="authen-error"></div>
+            <div id="successAuthen" class="authen-success"></div>
         </div>
     </div>
 

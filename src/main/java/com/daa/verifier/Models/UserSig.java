@@ -8,23 +8,24 @@ import org.json.JSONObject;
 public class UserSig {
     private String status;
     private String sig;
-    private JSONObject information;
+    private String information;
 
     public UserSig() {
     }
 
-    public UserSig(String status, String sig, JSONObject information) {
+    public UserSig(String status, String sig, String information) {
         this.status = status;
         this.sig = sig;
         this.information = information;
     }
 
     public UserSig(String stringJson) {
+        System.out.println("stringJson: "+stringJson);
         try {
             JSONObject json = new JSONObject(stringJson);
             this.status = json.getString("status");
             this.sig = json.getString("sig");
-            this.information = json.getJSONObject("information");
+            this.information = json.getString("information");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -46,11 +47,18 @@ public class UserSig {
         this.sig = sig;
     }
 
-    public JSONObject getInformation() {
+    public String getInformation() {
         return information;
     }
 
-    public void setInformation(JSONObject information) {
+    public void setInformation(String information) {
         this.information = information;
+    }
+    public String getDetailInfo(String keyName) {
+        JSONObject json = new JSONObject(this.getInformation());
+        if (json.has(keyName)) {
+            return json.getString(keyName);
+        }
+        return null;
     }
 }

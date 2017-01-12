@@ -2,13 +2,14 @@ package com.daa.verifier.Controllers;
 
 import com.daa.verifier.Models.*;
 import com.daa.verifier.Repository.DatabaseOperation;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
-
+import java.net.URLDecoder;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -279,18 +280,21 @@ public class VerifierController {
         }
     };
 
-    @RequestMapping(value = "/verify/{appSession}", method = RequestMethod.POST)
+    @RequestMapping(value = "/verify/{appId}/{appSession}", method = RequestMethod.POST)
     public void postInfoVerify(HttpServletResponse response,
                                @PathVariable String appSession,
+                               @PathVariable Integer appId,
                                @RequestBody String info
     ) throws IOException {
         if (info == null || appSession == null) {
             response.setStatus(400);
             response.getWriter().println("ERROR: body info or appSession string is Null");
         } else {
+            String infoDecode = URLDecoder.decode(info,"UTF-8").replace("=", "");
+            System.out.println("info"+infoDecode);
             UserSig userSig = null;
             try {
-                userSig = new UserSig(info);
+                userSig = new UserSig(infoDecode);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -298,12 +302,15 @@ public class VerifierController {
             System.out.println("verify with serviceSession: "+this.listSessionId.get(appSession));
             if (userSig != null) {
                 Boolean verifyResult = VerifyUserInfo(this.listSessionId.get(appSession), userSig);
+                DatabaseOperation databaseOperation = new DatabaseOperation(dataSource);
                 if (verifyResult) {
                     response.setStatus(200);
+                    databaseOperation.addVerifyLog(appId, userSig.getInformation(), true);
                     response.getWriter().println("Get Info From User success");
                     response.getWriter().println("Your info: "+info);
                 } else {
                     response.setStatus(400);
+                    databaseOperation.addVerifyLog(appId, userSig.getInformation(), false);
                     response.getWriter().println("Verify User Fail!!!");
                 }
             } else {
@@ -470,10 +477,7 @@ public class VerifierController {
         json.put("status", "ok");
         String sig = signMessage(appSessionId, data);
         json.put("sig", sig);
-        JSONObject per = new JSONObject(data.getString("permission"));
         System.out.println("certificate: "+json.toString());
-        ServiceSig serviceSig = new ServiceSig("ok", sig, per, verifierSessionId);
-        System.out.println("-------------> verify SERVICE: "+VerifyServiceInfo(verifierSessionId, serviceSig));
         return json.toString();
     };
     public String signMessage(String appSession,JSONObject data) throws Exception {
@@ -501,9 +505,9 @@ public class VerifierController {
     public Boolean VerifyUserInfo(String serviceSessionId, UserSig userSig) {
         Verifier verifier = new Verifier(this.getCurve());
         // byte[] message
-        byte[] information = hexStringToByteArray(userSig.getInformation().toString());
+        byte[] information = userSig.getInformation().getBytes();
         // byte[] session
-        byte[] sessionId = hexStringToByteArray(serviceSessionId);
+        byte[] sessionId = serviceSessionId.getBytes();
         // EcDaaSignature sig
         Authenticator.EcDaaSignature ecDaaSignature = new Authenticator.EcDaaSignature(hexStringToByteArray(userSig.getSig()), sessionId, this.getCurve());
         // String appId
