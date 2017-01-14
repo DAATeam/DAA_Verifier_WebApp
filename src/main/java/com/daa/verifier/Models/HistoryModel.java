@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import org.json.JSONObject;
 import org.springframework.jdbc.core.RowMapper;
 
 public class HistoryModel {
@@ -56,4 +57,13 @@ public class HistoryModel {
 
     public HistoryModel() {
     }
+
+    public JSONObject toJson() {
+        JSONObject json =  new JSONObject();
+        json.put("serviceId", this.getServiceId());
+        json.put("userInfo", this.getUserInfo());
+        json.put("result", this.getResult());
+        json.put("timestamp", this.getTimestamp());
+        return  json;
+    };
 }

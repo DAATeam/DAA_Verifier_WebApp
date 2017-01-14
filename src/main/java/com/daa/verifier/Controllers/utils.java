@@ -1,7 +1,13 @@
 package com.daa.verifier.Controllers;
+import com.daa.verifier.Models.HistoryModel;
+import org.json.JSONObject;
+
 import java.security.MessageDigest;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
+import java.util.List;
 /**
  * Created by DK on 12/3/16.
  */
@@ -48,6 +54,15 @@ public class utils {
             return null;
         }
 
+    }
+
+    public static List<JSONObject> arrayHistoryObjectToString(List<HistoryModel> list) {
+        List<JSONObject> result = new ArrayList<>();
+        for (HistoryModel hist: list
+             ) {
+            result.add(hist.toJson());
+        }
+        return result;
     }
 
 }

@@ -35,15 +35,15 @@ function sendAppCertToVerifier(appData) {
 }
 function verifySuccess(message) {
     console.log('verify Success: ', message);
-    document.getElementById("successAuthen").innerText = "";
-    document.getElementById("successAuthen").innerText = "Verify User Success!";
+    document.getElementById("result").className = "authen-success";
+    document.getElementById("result").innerText = "Verify User Success!";
 }
 function communicateFail(xhr, err, message) {
     console.log('xhr: ', xhr);
     console.log('communicate Fail: ', err);
     console.log('step Fail: ', message);
-    document.getElementById("errorAuthen").innerText = "";
-    document.getElementById("errorAuthen").innerText = "Verify User Fail!";
+    document.getElementById("result").className = "authen-error";
+    document.getElementById("result").innerText = "Verify User Fail!";
 }
 function process(url, type, data, response, error, step) {
     if (type == "get") {

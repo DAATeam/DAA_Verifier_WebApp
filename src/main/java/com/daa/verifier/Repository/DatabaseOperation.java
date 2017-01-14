@@ -82,7 +82,7 @@ public class DatabaseOperation {
     }
 
     public List<HistoryModel> getVerifyLog(Integer serviceId) {
-        String sql = "SELECT * FROM history WHERE service_id=:serviceId";
+        String sql = "SELECT * FROM history WHERE service_id=2 ORDER BY id DESC limit 10";
         Map namedParameters = new HashMap();
         namedParameters.put("serviceId", serviceId);
         List<Map<String, Object>> rows = this.jdbcTemplate.queryForList(sql,namedParameters);

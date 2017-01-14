@@ -38,8 +38,7 @@
             <div id="authentication" class="authentication">
                 <button class="buttonAuthen" id="button-authen" value=${enable} onclick="clickAuthen()">Authentication</button>
             </div>
-            <div id="errorAuthen" class="authen-error"></div>
-            <div id="successAuthen" class="authen-success"></div>
+            <div id="result" class="authen-success"></div>
         </div>
     </div>
 

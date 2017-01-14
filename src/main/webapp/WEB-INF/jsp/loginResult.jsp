@@ -40,6 +40,17 @@
     <div id="powered">
     </div>
 </div>
+<div id="history" class="history">
+    <p class="labelHistory">Verify History List</p>
+    <table id="historyTable">
 
+    </table>
+    <button id="refreshButton" class="refresh" onclick="refresh()">Refresh</button>
+</div>
+<div id="data">
+    <div id="log" value=${log}></div>
+    <div id="appId" value=${appId}></div>
+</div>
 </body>
+<script type="text/javascript" src="<c:url value="/resources/theme/js/loginResult.js" />"></script>
 </html>

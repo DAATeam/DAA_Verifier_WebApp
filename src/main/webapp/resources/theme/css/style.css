@@ -333,3 +333,51 @@ body {
 	font-size: 20px;
 	margin-top: 16px;
 }
+.rowItem {
+	min-width: 100px;
+	border: 1px solid darkgreen;
+	color: black;
+	padding-left: 5px;
+}
+.infoItem {
+	min-width: 400px;
+	border: 1px solid darkgreen;
+	color: black;
+	padding-left: 5px;
+}
+.timeItem {
+	min-width: 200px;
+	border: 1px solid darkgreen;
+	color: black;
+	padding-left: 5px;
+}
+.labelHistory {
+	font-size: 15px;
+	font-weight: bold;
+	color: green;
+	margin-bottom: 8px;
+}
+.rowTable {
+	min-width: 30px;
+}
+.history {
+	margin-left: 32px;
+	padding-bottom: 64px;
+}
+#refreshButton {
+	margin-top: 8px;
+	height: 30px;
+	width: 150px;
+	color: white;
+	font-size: 13px;
+	font-weight: bold;
+	background-color: #95C436;
+	border-radius: 5px;
+	cursor: pointer;
+}
+.resultSuccess {
+	color: #A9DC75;
+}
+.resultFail {
+	color: red;
+}

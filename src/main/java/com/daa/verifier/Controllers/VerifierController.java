@@ -28,9 +28,8 @@ import com.daa.verifier.Models.Issuer;
 import org.json.JSONObject;
 import java.util.List;
 
-import static com.daa.verifier.Controllers.utils.bytesToHex;
-import static com.daa.verifier.Controllers.utils.hexStringToByteArray;
-
+import static com.daa.verifier.Controllers.utils.*;
+import javax.servlet.http.Cookie;
 /**
  * Created by DK on 11/24/16.
  */
@@ -141,6 +140,8 @@ public class VerifierController {
             if (checkLogin(service)) {
                 this.setService(service);
                 response.setStatus(200);
+                Cookie cookie = new Cookie("serviceLogin", "true");
+                response.addCookie(cookie);
                 JSONObject json = new JSONObject();
                 json.put("status", "login success");
                 json.put("link", Config.VerifierUrl+"/loginResult/"+app_Id.toString());
@@ -170,6 +171,9 @@ public class VerifierController {
             model.put("serviceName", ser.getServiceName());
             String url = Config.VerifierUrl+"/verify/"+appId.toString();
             model.put("url", url);
+            System.out.println("log"+ getLog(appId));
+            model.put("log", getLog(appId));
+            model.put("appId", appId);
             return "loginResult";
         }
         return "homepage";
@@ -311,7 +315,6 @@ public class VerifierController {
                     response.setStatus(200);
                     databaseOperation.addVerifyLog(appId, userSig.getInformation(), true);
                     response.getWriter().println("Get Info From User success");
-                    response.getWriter().println("Your info: "+info);
                 } else {
                     response.setStatus(400);
                     databaseOperation.addVerifyLog(appId, userSig.getInformation(), false);
@@ -323,6 +326,27 @@ public class VerifierController {
             }
         }
         this.listSessionId.remove(appSession);
+    }
+
+    @RequestMapping(value = "/history/{appId}", method = RequestMethod.GET)
+    public void getHistoryVerfy(HttpServletResponse response,
+                                      @PathVariable Integer appId
+    ) throws IOException {
+        JSONObject result = getLog(appId);
+        response.setStatus(200);
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        result.write(response.getWriter());
+    }
+
+    public JSONObject getLog(Integer appId) {
+        DatabaseOperation databaseOperation = new DatabaseOperation(dataSource);
+        JSONObject result = new JSONObject();
+        List<HistoryModel> listHistory = new ArrayList<>();
+        listHistory = databaseOperation.getVerifyLog(appId);
+        result.put("status", "ok");
+        List<JSONObject> arr = arrayHistoryObjectToString(listHistory);
+        result.put("list", arr);
+        return result;
     }
 
     // For Test service provider certificate
