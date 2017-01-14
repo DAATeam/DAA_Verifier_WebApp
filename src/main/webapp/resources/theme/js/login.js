@@ -1,8 +1,10 @@
 /**
  * Created by DK on 11/27/16.
  */
-const localAppUrl = 'http://localhost:6969/';
-const verifierUrl = 'http://localhost:8090/';
+const appPort = '6970';
+const verifierDomain = 'localhost';
+const localAppUrl = 'http://localhost:'+appPort+'/';
+const verifierUrl = 'http://'+verifierDomain+':8090/';
 function loginService(appId, pass, cb) {
     var urlLogin = verifierUrl+'login';
     $.ajax({

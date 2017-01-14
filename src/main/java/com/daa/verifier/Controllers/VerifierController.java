@@ -137,6 +137,7 @@ public class VerifierController {
     ) throws IOException {
         if (app_Id != null && m != null && (app_Id instanceof Integer)) {
             Service service = new Service(app_Id, m);
+            response.setHeader("Access-Control-Allow-Origin", "*");
             if (checkLogin(service)) {
                 this.setService(service);
                 response.setStatus(200);
@@ -188,6 +189,7 @@ public class VerifierController {
             // get Issuer public key from response;
             Issuer.IssuerPublicKey ipk = new Issuer.IssuerPublicKey(curve, ipkString);
             this.setIssuerPublicKey(ipk);
+            response.setHeader("Access-Control-Allow-Origin", "*");
             try {
                 Authenticator authenticator = new Authenticator(curve, ipk, sk);
                 Issuer.JoinMessage1 jm1 = authenticator.EcDaaJoin1(nonce);
@@ -262,6 +264,7 @@ public class VerifierController {
             String sessionId = utils.generateSessionId();
             this.listSessionId.put(appSessionId, sessionId);
             String cert = null;
+            response.setHeader("Access-Control-Allow-Origin", "*");
             try {
                 cert = generateCertificate(appSessionId, sessionId, data);
             } catch (Exception e) {
@@ -303,6 +306,7 @@ public class VerifierController {
             if (userSig != null) {
                 Boolean verifyResult = VerifyUserInfo(this.listSessionId.get(appSession), userSig);
                 DatabaseOperation databaseOperation = new DatabaseOperation(dataSource);
+                response.setHeader("Access-Control-Allow-Origin", "*");
                 if (verifyResult) {
                     response.setStatus(200);
                     databaseOperation.addVerifyLog(appId, userSig.getInformation(), true);

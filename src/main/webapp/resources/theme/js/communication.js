@@ -1,14 +1,14 @@
 /**
  * Created by DK on 12/9/16.
  */
-//const localAppUrl = 'http://localhost:6969/';
-const localAppUrl = 'http://localhost:6970/';
-const verifierUrl = 'http://localhost:8090/';
+const appPort = '6970';
+const verifierDomain = 'localhost';
+const localAppUrl = 'http://localhost:'+appPort+'/';
+const verifierUrl = 'http://'+verifierDomain+':8090/';
 var sessionId = null;
 var servicePageId = null;
 function clickAuthen() {
-    var test = "${serviceId}";
-    console.log('click authen', test);
+    console.log('welcome');
     process(localAppUrl+'new', 'get', null, getSessionSuccess, communicateFail, 'get sessionId from local App');
 }
 window.onload = function() {
@@ -35,13 +35,15 @@ function sendAppCertToVerifier(appData) {
 }
 function verifySuccess(message) {
     console.log('verify Success: ', message);
-    document.getElementById("successAuthen").innerText = "Verify User Success!"
+    document.getElementById("successAuthen").innerText = "";
+    document.getElementById("successAuthen").innerText = "Verify User Success!";
 }
 function communicateFail(xhr, err, message) {
     console.log('xhr: ', xhr);
     console.log('communicate Fail: ', err);
     console.log('step Fail: ', message);
-    document.getElementById("errorAuthen").innerText = "Verify User Fail!"
+    document.getElementById("errorAuthen").innerText = "";
+    document.getElementById("errorAuthen").innerText = "Verify User Fail!";
 }
 function process(url, type, data, response, error, step) {
     if (type == "get") {
