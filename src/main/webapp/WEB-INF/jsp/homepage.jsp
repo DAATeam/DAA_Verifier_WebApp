@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <link href="<c:url value="/resources/theme/css/style.css" />" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="<c:url value="/resources/theme/js/jquery-3.1.1.min.js" />"></script>
     <title>DAA SERVICE PROVIDER HOMEPAGE</title>
 </head>
 <body>

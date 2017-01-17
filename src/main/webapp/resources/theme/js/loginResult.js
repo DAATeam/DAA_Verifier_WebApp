@@ -20,7 +20,7 @@ window.onload = function() {
 };
 
 const appPort = '6970';
-const verifierDomain = 'localhost';
+const verifierDomain = '172.20.10.3';
 const localAppUrl = 'http://localhost:'+appPort+'/';
 const verifierUrl = 'http://'+verifierDomain+':8090/';
 function getHistory(appId, cb) {

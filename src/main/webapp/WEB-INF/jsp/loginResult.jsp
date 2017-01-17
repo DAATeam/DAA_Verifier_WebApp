@@ -10,8 +10,8 @@
 <html lang="en">
 <head>
     <title>Service Manage Page</title>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="<c:url value="/resources/theme/js/jquery-3.1.1.min.js" />"></script>
+    <script type="text/javascript" src="<c:url value="/resources/theme/js/jquery-3.1.1.js" />"></script>
     <!-- // Load Javascipt -->
 
     <!-- Load stylesheets -->
@@ -34,7 +34,6 @@
             <a href=${url}>${url}</a>
         </div>
     </div>
-
     <div id="wrapperbottom"></div>
 
     <div id="powered">
