@@ -325,7 +325,7 @@ public class VerifierController {
                 response.getWriter().println("ERROR: invalid input. not enough params");
             }
         }
-        this.listSessionId.remove(appSession);
+//        this.listSessionId.remove(appSession);
     }
 
     @RequestMapping(value = "/history/{appId}", method = RequestMethod.GET)
